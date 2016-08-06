@@ -1,0 +1,13 @@
+package me.benzplayz.cooldown;
+
+public class Cooldown
+{
+  public long startTime;
+  public int seconds;
+  
+  public Cooldown(int seconds)
+  {
+    this.startTime = System.currentTimeMillis();
+    this.seconds = seconds;
+  }
+}
