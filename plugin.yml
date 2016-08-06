@@ -1,0 +1,5 @@
+main: me.benzplayz.Main
+name: Report
+version: 1.0
+commands:
+  report:
