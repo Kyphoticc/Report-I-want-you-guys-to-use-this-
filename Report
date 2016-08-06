@@ -1,0 +1,92 @@
+package me.benzplayz.report;
+
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
+import report.cooldown.CooldownManager;
+
+public class Report
+  implements CommandExecutor
+{
+  private int index = 0;
+  
+  public void recieveReport(String player, String reason, String reporter)
+  {
+    Player p = Bukkit.getPlayer(reporter);
+    if (p != null)
+    {
+      if (CooldownManager.getInstance().hasCooldown(p, "Report"))
+      {
+        CooldownManager.getInstance().cooldownMsg(p, "Report");
+        return;
+      }
+      CooldownManager.getInstance().addCooldown(p, "Report", Main.getPlugin().getConfig().getInt("cooldown"));
+      if (!p.hasPermission(Main.getPlugin().getConfig().getString("permission"))) {
+        p.sendMessage(CooldownManager.getInstance().getPrefix(true) + "Report Sent! You will get a resposne soon.");
+      }
+    }
+    Player user = Bukkit.getPlayer(player);
+    if (user != null)
+    {
+      int i = ++this.index;
+      for (String format : Main.getPlugin().getConfig().getStringList("format"))
+      {
+        format = ChatColor.translateAlternateColorCodes('&', format);
+        format = format.replace("(id)", Integer.toString(i));
+        format = format.replace("(reported)", user.getName());
+        format = format.replace("(reporter)", p.getName());
+        format = format.replace("(reason)", reason);
+        
+        recieveBroadcast(format, Main.getPlugin().getConfig().getString("permission"));
+      }
+    }
+  }
+  
+  public static void recieveBroadcast(String message, String perm)
+  {
+    Player[] arrayOfPlayer;
+    int j = (arrayOfPlayer = Bukkit.getOnlinePlayers()).length;
+    for (int i = 0; i < j; i++)
+    {
+      Player p = arrayOfPlayer[i];
+      if (p.hasPermission(perm)) {
+        p.sendMessage(message);
+      }
+    }
+  }
+  
+  public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args)
+  {
+    if (cmd.getName().equalsIgnoreCase("report"))
+    {
+      Player p = (Player)sender;
+      if (args.length == 0)
+      {
+        p.sendMessage(CooldownManager.getInstance().getPrefix(true) + "Please include a player and a reason.");
+        return true;
+      }
+      if (args.length == 1)
+      {
+        p.sendMessage(CooldownManager.getInstance().getPrefix(false) + "Please include a reason.");
+        return true;
+      }
+      Player t = Bukkit.getPlayer(args[0]);
+      if (t == null)
+      {
+        p.sendMessage(CooldownManager.getInstance().getPrefix(false) + "Thay player is not online");
+        return true;
+      }
+      StringBuilder str = new StringBuilder();
+      for (int i = 1; i < args.length; i++) {
+        str.append(args[i] + " ");
+      }
+      String strString = str.toString().trim();
+      recieveReport(t.getName(), strString, p.getName());
+    }
+    return false;
+  }
+}
