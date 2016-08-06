@@ -1,0 +1,123 @@
+package report.cooldown;
+
+import java.util.concurrent.ConcurrentHashMap;
+import org.bukkit.entity.Player;
+
+public class CooldownManager
+{
+  private static CooldownManager instance;
+  private ConcurrentHashMap<String, Cooldown> cooldownPlayers;
+  
+  public static CooldownManager getInstance()
+  {
+    if (instance == null) {
+      instance = new CooldownManager();
+    }
+    return instance;
+  }
+  
+  private CooldownManager()
+  {
+    this.cooldownPlayers = new ConcurrentHashMap();
+  }
+  
+  public String getPrefix(boolean green)
+  {
+    return blue ? "�b�lREPORT: �a" : "�c�lREPORT�c"
+  }
+  
+  public void addCooldown(Player p, String cooldown, int seconds)
+  {
+    this.cooldownPlayers.put(p.getName() + "_" + cooldown.toLowerCase(), new Cooldown(seconds));
+  }
+  
+  private boolean checkCooldown(Player p, String cooldown)
+  {
+    if ((hasCooldown(p, cooldown)) && (getTimeLeft(p, cooldown) <= 0))
+    {
+      removeCooldown(p, cooldown, false);
+      return true;
+    }
+    return false;
+  }
+  
+  public void cooldownMsg(Player p, String cooldown)
+  {
+    if (!checkCooldown(p, cooldown)) {
+      p.sendMessage(getPrefix(false) + "You can use �7" + cooldown + " �cin �7" + 
+        time(getTimeLeft(p, cooldown), false) + "�c.");
+    }
+  }
+  
+  public void removeCooldown(Player p, String cooldown, boolean logout)
+  {
+    this.cooldownPlayers.remove(p.getName() + "_" + cooldown.toLowerCase());
+    if (!logout) {
+      p.sendMessage(getPrefix(true) + "You can now use �7" + cooldown + " �aagain!");
+    }
+  }
+  
+  public Cooldown getCooldown(Player p, String cooldown)
+  {
+    if (!hasCooldown(p, cooldown)) {
+      return null;
+    }
+    return (Cooldown)this.cooldownPlayers.get(p.getName() + "_" + cooldown.toLowerCase());
+  }
+  
+  public int getTimeLeft(Player p, String cooldown)
+  {
+    if (!hasCooldown(p, cooldown)) {
+      return -1;
+    }
+    Cooldown cool = getCooldown(p, cooldown);
+    
+    long startTime = cool.startTime;
+    long currentTime = System.currentTimeMillis();
+    
+    long added = (currentTime - startTime) / 1000L - cool.seconds;
+    if (added >= 0L) {
+      added = 0L;
+    }
+    return (int)Math.abs(added);
+  }
+  
+  public String time(int seconds, boolean green)
+  {
+    int days = seconds / 86400;
+    
+    int abovedays = seconds % 86400;
+    
+    int hours = abovedays / 3600;
+    
+    int abovehours = abovedays % 3600;
+    
+    int minutes = abovehours / 60;
+    
+    int secs = abovehours % 60;
+    if (days > 0) {
+      return days + (green ? "�a" : "�c") + " day(s)";
+    }
+    if (hours > 0) {
+      return 
+        hours + (green ? "�a" : "�c") + " hr �7" + minutes + (green ? "�a" : "�c") + " min �7" + secs + (green ? "�a" : "�c") + " sec";
+    }
+    if (minutes > 0) {
+      return minutes + (green ? "�a" : "�c") + " min �7" + secs + (green ? "�a" : "�c") + " sec";
+    }
+    if (seconds > 0) {
+      return secs + (green ? "�a" : "�c") + " sec";
+    }
+    return (green ? "�a" : "�c") + "now";
+  }
+  
+  public boolean hasCooldown(Player p, String cooldown)
+  {
+    return this.cooldownPlayers.containsKey(p.getName() + "_" + cooldown.toLowerCase());
+  }
+  
+  public ConcurrentHashMap<String, Cooldown> getMap()
+  {
+    return this.cooldownPlayers;
+  }
+}
