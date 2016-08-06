@@ -1,0 +1,3 @@
+format: '&b&lREPORT: &a(reported) &creported &c(reported) &dfor &3(reason)'
+cooldown: 5
+permission: report.see
